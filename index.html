@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Requirements Checker: Check and Resize Photo Size, Dimensions and Format</title>
+<meta name="description" content="Upload a photo and check its dimensions, file size, format, aspect ratio and resolution against passport, visa, social media or custom requirements. Resize and compress it to fit. Free, and your photo never leaves your device.">
+<meta name="theme-color" content="#2B4BDB">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#EDEFEA;
+  --panel:#FFFFFF;
+  --ink:#1D2630;
+  --muted:#58636F;
+  --line:#D5D9D1;
+  --soft:#F5F6F2;
+  --accent:#2B4BDB;
+  --accent-dark:#2039A8;
+  --pass:#17794F; --pass-bg:#E2F2E9;
+  --fail:#B8332A; --fail-bg:#FAE6E3;
+  --warn:#85560A; --warn-bg:#FBEFD5;
+  --head:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Instrument Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
+a{color:var(--accent)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{border-bottom:1px solid var(--line);background:var(--ground)}
+.bar{display:flex;align-items:center;height:58px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-family:var(--head);font-weight:700;font-size:1.05rem}
+.brand svg{flex:none}
+
+.intro{padding:34px 0 22px;max-width:720px}
+h1{font-family:var(--head);font-weight:700;font-size:clamp(1.9rem,5.2vw,3rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 12px}
+.intro p{margin:0;color:var(--muted);font-size:1.05rem;max-width:62ch}
+
+.tool{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start;padding-bottom:36px}
+@media(min-width:900px){
+  .tool{grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px}
+  .col-a{position:sticky;top:16px}
+}
+.col-a,.col-b{display:grid;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-family:var(--head);font-size:1.2rem;line-height:1.2;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.n{flex:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:.85rem;font-weight:600}
+
+/* upload */
+[hidden]{display:none!important}
+.drop{display:grid;gap:8px;place-items:center;text-align:center;border:2px dashed #AEB5AA;border-radius:10px;padding:26px 16px;background:var(--soft);transition:background .15s,border-color .15s}
+.drop.over,.drop:focus-within{background:#E8ECFB;border-color:var(--accent)}
+.pick{display:grid;gap:10px;width:100%;max-width:320px;margin-top:6px}
+.pick .btn{width:100%}
+.drop strong{font-family:var(--head);font-size:1.15rem}
+.drop span{color:var(--muted);font-size:.92rem}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.vf{background:#DADFD6;border-radius:10px;padding:16px;display:grid;place-items:center}
+.frame{position:relative;display:inline-block;max-width:100%;line-height:0;overflow:hidden;background:#fff}
+.frame img{display:block;width:auto;height:auto;max-width:100%;max-height:340px}
+.frame .c{position:absolute;width:22px;height:22px;border:3px solid #fff;filter:drop-shadow(0 0 2px rgba(0,0,0,.65));pointer-events:none}
+.c.tl{top:8px;left:8px;border-right:0;border-bottom:0}
+.c.tr{top:8px;right:8px;border-left:0;border-bottom:0}
+.c.bl{bottom:8px;left:8px;border-right:0;border-top:0}
+.c.br{bottom:8px;right:8px;border-left:0;border-top:0}
+.frame.snap .c.tl{animation:snapTL .4s ease-out}
+.frame.snap .c.tr{animation:snapTR .4s ease-out}
+.frame.snap .c.bl{animation:snapBL .4s ease-out}
+.frame.snap .c.br{animation:snapBR .4s ease-out}
+@keyframes snapTL{from{transform:translate(-14px,-14px);opacity:0}}
+@keyframes snapTR{from{transform:translate(14px,-14px);opacity:0}}
+@keyframes snapBL{from{transform:translate(-14px,14px);opacity:0}}
+@keyframes snapBR{from{transform:translate(14px,14px);opacity:0}}
+.crop{position:absolute;border:2px dashed #fff;box-shadow:0 0 0 100vmax rgba(20,28,40,.58);pointer-events:none}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;margin-top:12px;font-size:.92rem}
+.meta .fn{color:var(--muted);overflow-wrap:anywhere;min-width:0;flex:1 1 140px}
+.cropnote{margin:8px 0 0;font-size:.88rem;color:var(--muted)}
+.err{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--fail-bg);color:var(--fail);font-size:.93rem}
+
+/* form bits */
+label{display:block;font-weight:600;font-size:.92rem;margin-bottom:5px}
+input[type=number],select{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid #B9BFB4;border-radius:8px;padding:10px 11px;min-height:44px}
+input[type=range]{width:100%;accent-color:var(--accent);min-height:30px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.check{display:flex;align-items:center;gap:9px;font-weight:500;margin:6px 0}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.note{font-size:.9rem;color:var(--muted);margin:10px 0 0}
+.note.warnnote{color:var(--warn)}
+fieldset{border:0;padding:0;margin:14px 0 0;min-width:0}
+legend{font-weight:600;font-size:.92rem;padding:0;margin-bottom:6px}
+.sub{margin:0 0 6px;font-size:.85rem;color:var(--muted)}
+.ratio{display:flex;align-items:center;gap:8px}
+.ratio span{font-weight:600}
+.checks{display:flex;flex-wrap:wrap;gap:4px 16px}
+.hint{font-size:.88rem;color:var(--muted);margin:12px 0 0}
+
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:11px 18px;min-height:46px;cursor:pointer;border:2px solid transparent;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-dark)}
+.btn.ghost{background:#fff;color:var(--ink);border-color:#B9BFB4}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.small{min-height:38px;padding:7px 12px;font-size:.9rem}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+
+/* results */
+.banner{border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--soft);color:var(--muted);font-weight:500}
+.banner b{font-family:var(--head);font-size:1.15rem;color:var(--ink);display:block;line-height:1.2}
+.banner.pass{background:var(--pass-bg);color:var(--pass)} .banner.pass b{color:var(--pass)}
+.banner.fail{background:var(--fail-bg);color:var(--fail)} .banner.fail b{color:var(--fail)}
+.banner.warn{background:var(--warn-bg);color:var(--warn)} .banner.warn b{color:var(--warn)}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:30px minmax(0,1fr);gap:4px 10px;padding:13px 0;border-bottom:1px solid var(--line)}
+.ico{grid-row:1 / span 2;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#E3E6DF;color:var(--muted)}
+.ico svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.row.pass .ico{background:var(--pass-bg);color:var(--pass)}
+.row.fail .ico{background:var(--fail-bg);color:var(--fail)}
+.row.warn .ico{background:var(--warn-bg);color:var(--warn)}
+.rl{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline}
+.lab{font-weight:600}
+.val{font-family:var(--head);font-weight:600;font-size:1.1rem;overflow-wrap:anywhere}
+.rn{grid-column:2;display:flex;flex-direction:column;font-size:.9rem;color:var(--muted)}
+.row.fail .det{color:var(--fail)} .row.warn .det{color:var(--warn)}
+.rows.compact .val{font-size:1rem}
+
+/* resize */
+.locked{opacity:.5;pointer-events:none}
+.outcard{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.outcard h3{font-family:var(--head);font-size:1.1rem;margin:0 0 10px}
+.outflex{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.outflex img{width:96px;height:96px;object-fit:contain;background:var(--soft);border:1px solid var(--line);border-radius:8px;flex:none}
+.outflex p{margin:0 0 8px;color:var(--muted);font-size:.93rem}
+
+/* info */
+.info{border-top:1px solid var(--line);padding:34px 0 10px;display:grid;gap:30px;max-width:760px}
+.info h2{font-family:var(--head);font-size:1.5rem;line-height:1.2;margin:0 0 10px}
+.info p,.info li,.info dd{color:#37424D}
+.info ol{padding-left:20px;margin:0}
+.info li{margin-bottom:6px}
+.info dt{font-weight:600;margin-top:12px}
+.info dd{margin:2px 0 0}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0}
+footer{border-top:1px solid var(--line);margin-top:30px;padding:22px 0 34px;color:var(--muted);font-size:.9rem}
+
+@media(max-width:520px){
+  .fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .card{padding:15px}
+}
+@media(prefers-reduced-motion:reduce){
+  .frame.snap .c{animation:none!important}
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="./">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2B4BDB"/><path d="M9 14V9h5M18 9h5v5M23 18v5h-5M14 23H9v-5" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Photo Requirements Checker</span>
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <h1>Does your photo meet the requirements?</h1>
+    <p>Upload a photo, choose what it has to match, and see what passes and what doesn't. Then resize it to fit and download it. Everything happens in your browser, so your photo is never uploaded.</p>
+  </section>
+
+  <div class="tool">
+    <div class="col-a">
+
+      <section class="card" aria-labelledby="s1">
+        <h2 id="s1"><span class="n">1</span>Upload a photo</h2>
+
+        <div class="drop" id="drop">
+          <strong>Add your photo</strong>
+          <span>Pick one from your phone or computer, take a new one, or drag or paste it here.</span>
+          <div class="pick">
+            <label class="btn primary" for="file">Choose from files or gallery</label>
+            <label class="btn ghost" for="cam">Take a photo</label>
+          </div>
+          <input type="file" id="file" accept="image/*">
+          <input type="file" id="cam" accept="image/*" capture="environment">
+        </div>
+
+        <div id="viewer" hidden>
+          <div class="vf">
+            <div class="frame" id="frame">
+              <img id="preview" alt="Your uploaded photo">
+              <div class="crop" id="cropBox" hidden></div>
+              <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+            </div>
+          </div>
+          <p class="cropnote" id="cropNote" hidden>The dashed box shows the part of the photo that is kept when you resize.</p>
+          <div class="meta">
+            <span class="fn" id="fileName"></span>
+            <span style="display:flex;gap:8px;flex-wrap:wrap">
+              <label class="btn ghost small" for="file" style="margin:0">Choose another</label>
+              <label class="btn ghost small" for="cam" style="margin:0">Take a photo</label>
+            </span>
+          </div>
+        </div>
+        <p class="err" id="err" role="alert" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="s2">
+        <h2 id="s2"><span class="n">2</span>Choose the requirement</h2>
+        <label for="preset">What is the photo for?</label>
+        <select id="preset">
+          <option value="none">Choose a requirement…</option>
+          <option value="us-passport">US passport photo (online)</option>
+          <option value="uk-passport">UK passport photo (online)</option>
+          <option value="eu-visa">EU / Schengen 35 × 45 mm</option>
+          <option value="linkedin">LinkedIn profile photo</option>
+          <option value="youtube">YouTube thumbnail</option>
+          <option value="instagram">Instagram portrait post</option>
+          <option value="custom">Custom (enter my own)</option>
+        </select>
+        <p class="note" id="presetNote">Pick one to see pass or fail for each check, or choose Custom to type the numbers from your form.</p>
+
+        <div id="customBox" hidden>
+          <p class="hint">Fill in only what your form asks for. Blank boxes are skipped.</p>
+          <fieldset>
+            <legend>Size in pixels</legend>
+            <div class="fields" style="margin-top:0">
+              <div><label for="cMinW">Minimum width</label><input type="number" id="cMinW" min="1" inputmode="numeric"></div>
+              <div><label for="cMaxW">Maximum width</label><input type="number" id="cMaxW" min="1" inputmode="numeric"></div>
+              <div><label for="cMinH">Minimum height</label><input type="number" id="cMinH" min="1" inputmode="numeric"></div>
+              <div><label for="cMaxH">Maximum height</label><input type="number" id="cMaxH" min="1" inputmode="numeric"></div>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Shape (aspect ratio)</legend>
+            <div class="ratio">
+              <input type="number" id="cRW" min="1" step="any" inputmode="decimal" aria-label="Ratio width" placeholder="Width">
+              <span>:</span>
+              <input type="number" id="cRH" min="1" step="any" inputmode="decimal" aria-label="Ratio height" placeholder="Height">
+            </div>
+            <p class="sub" style="margin-top:6px">Square is 1 : 1. A 35 × 45 mm photo is 35 : 45.</p>
+          </fieldset>
+          <fieldset>
+            <legend>File type</legend>
+            <div class="checks">
+              <label class="check"><input type="checkbox" class="cf" value="jpeg"> JPEG</label>
+              <label class="check"><input type="checkbox" class="cf" value="png"> PNG</label>
+              <label class="check"><input type="checkbox" class="cf" value="webp"> WebP</label>
+              <label class="check"><input type="checkbox" class="cf" value="gif"> GIF</label>
+            </div>
+            <p class="sub">Tick nothing to accept any type.</p>
+          </fieldset>
+          <fieldset>
+            <legend>File size in KB</legend>
+            <div class="fields" style="margin-top:0">
+              <div><label for="cMinKB">Minimum</label><input type="number" id="cMinKB" min="1" inputmode="numeric"></div>
+              <div><label for="cMaxKB">Maximum</label><input type="number" id="cMaxKB" min="1" inputmode="numeric"></div>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Resolution</legend>
+            <label for="cDPI" style="font-weight:500">Minimum DPI</label>
+            <input type="number" id="cDPI" min="1" inputmode="numeric">
+          </fieldset>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-b">
+      <section class="card" id="results" aria-labelledby="s3">
+        <h2 id="s3"><span class="n">3</span>Results</h2>
+        <div class="banner" id="banner" aria-live="polite"></div>
+        <ul class="rows" id="rows"></ul>
+      </section>
+
+      <section class="card" id="resize" aria-labelledby="s4">
+        <h2 id="s4"><span class="n">4</span>Resize and fix</h2>
+        <div id="resizeBody" class="locked">
+          <div class="fields" style="margin-top:0">
+            <div><label for="rw">Width (px)</label><input type="number" id="rw" min="1" max="10000" inputmode="numeric"></div>
+            <div><label for="rh">Height (px)</label><input type="number" id="rh" min="1" max="10000" inputmode="numeric"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="lock" checked> Lock the shape (change one side and the other follows)</label>
+
+          <div id="posBox" hidden style="margin-top:8px">
+            <label for="pos" id="posLabel">Move the kept area</label>
+            <input type="range" id="pos" min="0" max="100" value="50">
+          </div>
+
+          <div class="fields">
+            <div>
+              <label for="fmt">Save as</label>
+              <select id="fmt">
+                <option value="jpeg">JPEG</option>
+                <option value="png">PNG</option>
+                <option value="webp">WebP</option>
+              </select>
+            </div>
+            <div>
+              <label for="maxkb">Keep under (KB)</label>
+              <input type="number" id="maxkb" min="1" inputmode="numeric" placeholder="No limit">
+            </div>
+            <div>
+              <label for="q">Quality: <output id="qv">90</output></label>
+              <input type="range" id="q" min="40" max="100" value="90">
+            </div>
+            <div>
+              <label for="dpi">DPI label (JPEG)</label>
+              <input type="number" id="dpi" min="1" max="1200" inputmode="numeric" placeholder="Leave as is">
+            </div>
+          </div>
+
+          <p class="note" id="rnote">The photo is cropped to the new shape, never stretched.</p>
+          <div class="actions">
+            <button type="button" class="btn ghost" id="match">Fill in from requirement</button>
+            <button type="button" class="btn primary" id="go">Resize photo</button>
+          </div>
+        </div>
+
+        <div class="outcard" id="outCard" hidden>
+          <h3>Your resized photo</h3>
+          <div class="outflex">
+            <img id="outImg" alt="Preview of the resized photo">
+            <div>
+              <p id="outMeta"></p>
+              <a class="btn primary" id="dl" download>Download photo</a>
+            </div>
+          </div>
+          <div class="banner" id="outBanner"></div>
+          <ul class="rows compact" id="outRows"></ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="info">
+    <div>
+      <h2>How to check a photo</h2>
+      <ol>
+        <li>Upload your photo, or paste it from your clipboard.</li>
+        <li>Choose what it is for, or enter the numbers from your form under Custom.</li>
+        <li>Read the results. Each check shows what your photo has and what is needed.</li>
+        <li>If something fails, resize the photo and download the fixed copy.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>What each check means</h2>
+      <dl>
+        <dt>Dimensions</dt><dd>The width and height of the photo in pixels.</dd>
+        <dt>File size</dt><dd>How much space the file takes up. Uploads often have a limit such as 100 KB or 2 MB. Here 1 KB is 1,024 bytes.</dd>
+        <dt>Format</dt><dd>The type of file, such as JPEG, PNG or WebP.</dd>
+        <dt>Aspect ratio</dt><dd>The shape of the photo: width compared with height. Square is 1:1 and a typical phone photo is 4:3.</dd>
+        <dt>Resolution</dt><dd>The total pixel count in megapixels, plus the DPI value stored in the file if there is one. DPI is only a label. The pixel size is what usually decides whether a photo is accepted.</dd>
+      </dl>
+    </div>
+    <div>
+      <h2>Questions</h2>
+      <details><summary>Is my photo uploaded anywhere?</summary><p>No. The checking and resizing run inside your browser. The photo stays on your device.</p></details>
+      <details><summary>Will resizing stretch my photo?</summary><p>No. If the new shape is different, the photo is cropped to fit. You can move the kept area before you resize.</p></details>
+      <details><summary>How do I get a photo under a file size limit?</summary><p>Type the limit in the "Keep under (KB)" box and save as JPEG or WebP. The tool lowers the quality just enough to fit. If it still can't fit, make the photo smaller in pixels.</p></details>
+      <details><summary>Are the built-in requirements official?</summary><p>They are common published values, but rules change and differ between offices and websites. Always confirm with whoever asked for the photo, or use Custom to enter their exact numbers.</p></details>
+      <details><summary>My iPhone photo won't open. Why?</summary><p>Some browsers can't read HEIC photos. Change the camera format to "Most Compatible" or convert the photo to JPEG first.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Photo Requirements Checker. Free to use. Your photos stay on your device.</div>
+</footer>
+
+<script>
+(() => {
+'use strict';
+
+const $ = id => document.getElementById(id);
+
+const FORMATS = { jpeg:'JPEG', png:'PNG', webp:'WebP', gif:'GIF' };
+const MIME = { jpeg:'image/jpeg', png:'image/png', webp:'image/webp' };
+const EXT = { jpeg:'jpg', png:'png', webp:'webp' };
+const COMMON = [[1,1],[4,3],[3,4],[3,2],[2,3],[16,9],[9,16],[5,4],[4,5],[7,9],[9,7],[21,9]];
+const RATIO_TOL = 0.01;
+
+const PRESETS = {
+  'us-passport': {
+    note: 'US passport photo, uploaded online: square, 600 to 1200 px, JPEG, up to 240 KB.',
+    minW:600, maxW:1200, minH:600, maxH:1200, ratio:[1,1], formats:['jpeg'], maxKB:240, target:{w:600,h:600}
+  },
+  'uk-passport': {
+    note: 'UK passport photo, uploaded online: at least 600 × 750 px, JPEG, between 50 KB and 10 MB.',
+    minW:600, minH:750, formats:['jpeg'], minKB:50, maxKB:10240, target:{w:600,h:750}
+  },
+  'eu-visa': {
+    note: '35 × 45 mm photo, used on many Schengen and EU visa and ID forms: 7:9 shape, at least 413 × 531 px (that is 300 DPI), JPEG.',
+    minW:413, minH:531, ratio:[7,9], formats:['jpeg'], target:{w:413,h:531}
+  },
+  'linkedin': {
+    note: 'LinkedIn profile photo: at least 400 × 400 px, up to 8 MB, JPEG, PNG or GIF. A square photo works best.',
+    minW:400, minH:400, maxW:7680, maxH:4320, formats:['jpeg','png','gif'], maxKB:8192, target:{w:800,h:800}
+  },
+  'youtube': {
+    note: 'YouTube thumbnail: 16:9 shape, at least 640 px wide (1280 × 720 is recommended), up to 2 MB, JPEG, PNG or GIF.',
+    minW:640, ratio:[16,9], formats:['jpeg','png','gif'], maxKB:2048, target:{w:1280,h:720}
+  },
+  'instagram': {
+    note: 'Instagram portrait post: 4:5 shape, 1080 × 1350 px recommended, JPEG or PNG.',
+    minW:1080, ratio:[4,5], formats:['jpeg','png'], target:{w:1080,h:1350}
+  }
+};
+const PRESET_FOOTER = ' These are common published values. Rules change, so confirm with whoever asked for the photo.';
+
+const ICON = {
+  pass:'<svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9"/></svg>',
+  fail:'<svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg>',
+  warn:'<svg viewBox="0 0 20 20"><path d="M10 5v6M10 15v.5"/></svg>',
+  info:'<svg viewBox="0 0 20 20"><path d="M5 10h10"/></svg>'
+};
+const STATUS_TEXT = { pass:'Passed', fail:'Needs fixing', warn:'Note', info:'' };
+
+const state = { info:null, url:null, outUrl:null, lockR:1, srcImg:null };
+
+/* ---------- helpers ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function gcd(a,b){ return b ? gcd(b, a % b) : a; }
+function fmtSize(b){ return b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB'; }
+function fmtKB(k){ return k >= 1024 && k % 1024 === 0 ? (k/1024) + ' MB' : k + ' KB'; }
+function px(n){ return Number(n).toLocaleString('en-US'); }
+
+function ratioText(w,h){
+  const r = w/h;
+  for(const [a,b] of COMMON){ if(Math.abs(r/(a/b) - 1) < 0.01) return a + ':' + b; }
+  const g = gcd(w,h);
+  if(w/g <= 40 && h/g <= 40) return (w/g) + ':' + (h/g);
+  return r.toFixed(2) + ':1';
+}
+
+function formatOf(file){
+  const t = (file.type || '').toLowerCase();
+  const map = { 'image/jpeg':'jpeg','image/jpg':'jpeg','image/pjpeg':'jpeg','image/png':'png','image/webp':'webp','image/gif':'gif' };
+  if(map[t]) return { key:map[t], label:FORMATS[map[t]] };
+  const m = /\.([a-z0-9]+)$/i.exec(file.name || '');
+  if(m){
+    const e = m[1].toLowerCase();
+    if(e === 'jpg' || e === 'jpeg') return { key:'jpeg', label:'JPEG' };
+    if(FORMATS[e]) return { key:e, label:FORMATS[e] };
+    return { key:'other', label:e.toUpperCase() };
+  }
+  return { key:'other', label:(t.split('/')[1] || 'Unknown').toUpperCase() };
+}
+
+/* ---------- DPI reading (JPEG and PNG headers) ---------- */
+async function readDpi(file){
+  try{
+    const buf = await file.slice(0, 262144).arrayBuffer();
+    const dv = new DataView(buf);
+    if(dv.byteLength < 12) return null;
+
+    if(dv.getUint32(0) === 0x89504E47){               // PNG
+      let p = 8;
+      while(p + 12 <= dv.byteLength){
+        const len = dv.getUint32(p), type = dv.getUint32(p+4);
+        if(type === 0x70485973){                       // pHYs
+          const x = dv.getUint32(p+8), unit = dv.getUint8(p+16);
+          return (unit === 1 && x) ? Math.round(x * 0.0254) : null;
+        }
+        if(type === 0x49444154) break;                 // IDAT
+        p += 12 + len;
+      }
+      return null;
+    }
+
+    if(dv.getUint16(0) === 0xFFD8){                    // JPEG
+      let p = 2, jfif = null, exif = null;
+      while(p + 4 <= dv.byteLength){
+        if(dv.getUint8(p) !== 0xFF) break;
+        const marker = dv.getUint8(p+1);
+        if(marker === 0xDA || marker === 0xD9) break;
+        const len = dv.getUint16(p+2);
+        if(marker === 0xE0 && dv.getUint32(p+4) === 0x4A464946){
+          const units = dv.getUint8(p+11), x = dv.getUint16(p+12);
+          if(units === 1) jfif = x; else if(units === 2) jfif = Math.round(x * 2.54);
+        }
+        if(marker === 0xE1 && dv.getUint32(p+4) === 0x45786966){
+          exif = exifDpi(dv, p + 10);
+        }
+        p += 2 + len;
+      }
+      return exif || jfif || null;
+    }
+  }catch(e){}
+  return null;
+}
+function exifDpi(dv, t){
+  try{
+    const le = dv.getUint16(t) === 0x4949;
+    const ifd = t + dv.getUint32(t+4, le);
+    const n = dv.getUint16(ifd, le);
+    let xr = null, unit = 2;
+    for(let i = 0; i < n; i++){
+      const e = ifd + 2 + i*12;
+      const tag = dv.getUint16(e, le);
+      if(tag === 0x011A){
+        const off = t + dv.getUint32(e+8, le);
+        const num = dv.getUint32(off, le), den = dv.getUint32(off+4, le);
+        if(den) xr = num/den;
+      }else if(tag === 0x0128){
+        unit = dv.getUint16(e+8, le);
+      }
+    }
+    if(!xr) return null;
+    return Math.round(unit === 3 ? xr * 2.54 : xr);
+  }catch(e){ return null; }
+}
+
+/* ---------- requirement ---------- */
+function num(id){ const v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : null; }
+
+function getReq(){
+  const key = $('preset').value;
+  if(key === 'none') return null;
+  if(key !== 'custom') return PRESETS[key];
+  const rw = num('cRW'), rh = num('cRH');
+  const formats = [...document.querySelectorAll('.cf:checked')].map(e => e.value);
+  const r = {
+    minW:num('cMinW'), maxW:num('cMaxW'), minH:num('cMinH'), maxH:num('cMaxH'),
+    ratio:(rw && rh) ? [rw,rh] : null,
+    formats:formats.length ? formats : null,
+    minKB:num('cMinKB'), maxKB:num('cMaxKB'), minDPI:num('cDPI'), target:null
+  };
+  const any = r.minW || r.maxW || r.minH || r.maxH || r.ratio || r.formats || r.minKB || r.maxKB || r.minDPI;
+  return any ? r : null;
+}
+
+function dimsNeed(r){
+  const parts = [];
+  const side = (min,max,word) => {
+    if(min && max) return min === max ? `${px(min)} px ${word}` : `${px(min)} to ${px(max)} px ${word}`;
+    if(min) return `at least ${px(min)} px ${word}`;
+    if(max) return `at most ${px(max)} px ${word}`;
+    return '';
+  };
+  const w = side(r.minW, r.maxW, 'wide'), h = side(r.minH, r.maxH, 'tall');
+  if(w) parts.push(w);
+  if(h) parts.push(h);
+  return parts.join(', ');
+}
+function sizeNeed(r){
+  if(r.minKB && r.maxKB) return `${fmtKB(r.minKB)} to ${fmtKB(r.maxKB)}`;
+  if(r.minKB) return `at least ${fmtKB(r.minKB)}`;
+  if(r.maxKB) return `up to ${fmtKB(r.maxKB)}`;
+  return '';
+}
+
+/* ---------- checking ---------- */
+function check(info, r){
+  const rows = [];
+  let fails = 0, warns = 0, checked = 0;
+  const add = (label, value, need, status, detail) => {
+    rows.push({ label, value, need, status, detail });
+    if(need) checked++;
+    if(status === 'fail') fails++;
+    if(status === 'warn') warns++;
+  };
+
+  // Dimensions
+  {
+    const need = r ? dimsNeed(r) : '';
+    const msgs = [];
+    if(r){
+      if(r.minW && info.w < r.minW) msgs.push(`Width is below the ${px(r.minW)} px minimum.`);
+      if(r.maxW && info.w > r.maxW) msgs.push(`Width is above the ${px(r.maxW)} px maximum.`);
+      if(r.minH && info.h < r.minH) msgs.push(`Height is below the ${px(r.minH)} px minimum.`);
+      if(r.maxH && info.h > r.maxH) msgs.push(`Height is above the ${px(r.maxH)} px maximum.`);
+    }
+    add('Dimensions', `${px(info.w)} × ${px(info.h)} px`, need, !need ? 'info' : msgs.length ? 'fail' : 'pass', msgs.join(' '));
+  }
+
+  // File size
+  {
+    const need = r ? sizeNeed(r) : '';
+    let detail = '', bad = false;
+    if(r && r.minKB && info.size < r.minKB * 1024){ bad = true; detail = `The file is under the ${fmtKB(r.minKB)} minimum.`; }
+    if(r && r.maxKB && info.size > r.maxKB * 1024){ bad = true; detail = `The file is over the ${fmtKB(r.maxKB)} limit.`; }
+    add('File size', fmtSize(info.size), need, !need ? 'info' : bad ? 'fail' : 'pass', detail);
+  }
+
+  // Format
+  {
+    const need = r && r.formats ? r.formats.map(f => FORMATS[f]).join(' or ') : '';
+    const bad = need && !r.formats.includes(info.fmt);
+    add('Format', info.fmtLabel, need, !need ? 'info' : bad ? 'fail' : 'pass', bad ? `Save the photo as ${need}.` : '');
+  }
+
+  // Aspect ratio
+  {
+    const need = r && r.ratio ? `${r.ratio[0]}:${r.ratio[1]}` : '';
+    let bad = false;
+    if(need){ bad = Math.abs((info.w/info.h) / (r.ratio[0]/r.ratio[1]) - 1) > RATIO_TOL; }
+    add('Aspect ratio', ratioText(info.w, info.h), need, !need ? 'info' : bad ? 'fail' : 'pass', bad ? `Crop the photo to ${need}.` : '');
+  }
+
+  // Resolution
+  {
+    const mp = (info.w * info.h / 1e6);
+    const mpText = (mp < 0.1 ? mp.toFixed(3) : mp.toFixed(1)) + ' MP';
+    const value = mpText + (info.dpi ? ` · ${info.dpi} DPI` : ' · no DPI stored');
+    const need = r && r.minDPI ? `at least ${r.minDPI} DPI` : '';
+    let status = 'info', detail = '';
+    if(need){
+      if(!info.dpi){ status = 'warn'; detail = "This file doesn't store a DPI value. When you resize, you can set one."; }
+      else if(info.dpi < r.minDPI){ status = 'fail'; detail = `The stored DPI is below ${r.minDPI}.`; }
+      else status = 'pass';
+    }
+    add('Resolution', value, need, status, detail);
+  }
+
+  return { rows, fails, warns, checked };
+}
+
+function rowHTML(r){
+  return `<li class="row ${r.status}">
+    <span class="ico" aria-hidden="true">${ICON[r.status]}</span>
+    <div class="rl"><span class="lab">${r.label}</span><span class="val">${esc(r.value)}</span>${STATUS_TEXT[r.status] ? `<span class="sr">${STATUS_TEXT[r.status]}</span>` : ''}</div>
+    <div class="rn">${r.need ? `<span class="need">Needs: ${esc(r.need)}</span>` : ''}${r.detail ? `<span class="det">${esc(r.detail)}</span>` : ''}</div>
+  </li>`;
+}
+
+function bannerFor(res, hasReq, withFix){
+  if(!hasReq) return { cls:'', html:'<span>Choose a requirement to see pass or fail for each check.</span>' };
+  if(res.fails > 0){
+    const word = res.fails === 1 ? '1 check needs' : `${res.fails} checks need`;
+    return { cls:'fail', html:`<div><b>${word} fixing</b></div>${withFix ? '<button type="button" class="btn primary small" data-fix>Resize to fit</button>' : ''}` };
+  }
+  if(res.warns > 0) return { cls:'warn', html:'<div><b>Meets the requirements</b>One thing to note below.</div>' };
+  return { cls:'pass', html:'<div><b>Meets all requirements</b></div>' };
+}
+
+function render(){
+  const r = getReq();
+  const key = $('preset').value;
+
+  $('customBox').hidden = key !== 'custom';
+  if(key === 'none') $('presetNote').textContent = 'Pick one to see pass or fail for each check, or choose Custom to type the numbers from your form.';
+  else if(key === 'custom') $('presetNote').textContent = r ? 'Checking against the numbers you entered.' : 'Enter at least one number below to start checking.';
+  else $('presetNote').textContent = PRESETS[key].note + PRESET_FOOTER;
+
+  const info = state.info;
+  const placeholder = ['Dimensions','File size','Format','Aspect ratio','Resolution'].map(l => ({ label:l, value:'—', need:'', status:'info', detail:'' }));
+
+  if(!info){
+    const b = bannerFor(null, false, false);
+    $('banner').className = 'banner ' + b.cls;
+    $('banner').innerHTML = '<span>Upload a photo to see its details here.</span>';
+    $('rows').innerHTML = placeholder.map(rowHTML).join('');
+    return;
+  }
+  const res = check(info, r);
+  const b = bannerFor(res, !!r, true);
+  $('banner').className = 'banner ' + b.cls;
+  $('banner').innerHTML = b.html;
+  $('rows').innerHTML = res.rows.map(rowHTML).join('');
+  if(state.out) renderOut();
+}
+
+/* ---------- loading ---------- */
+function showErr(msg){ const e = $('err'); e.textContent = msg; e.hidden = !msg; }
+
+function loadFile(file){
+  showErr('');
+  if(!file) return;
+  const looksImage = (file.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i.test(file.name || '');
+  if(!looksImage){ showErr('That file is not an image. Choose a JPEG, PNG, WebP or GIF photo.'); return; }
+
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = async () => {
+    if(state.url) URL.revokeObjectURL(state.url);
+    state.url = url;
+    state.srcImg = img;
+    const f = formatOf(file);
+    const dpi = await readDpi(file);
+    state.info = { name:file.name || 'photo', w:img.naturalWidth, h:img.naturalHeight, size:file.size, fmt:f.key, fmtLabel:f.label, dpi };
+    clearOut();
+
+    $('preview').src = url;
+    $('preview').alt = 'Preview of ' + state.info.name;
+    $('fileName').textContent = state.info.name;
+    $('drop').hidden = true;
+    $('viewer').hidden = false;
+    const fr = $('frame'); fr.classList.remove('snap'); void fr.offsetWidth; fr.classList.add('snap');
+
+    // resize defaults
+    $('rw').value = state.info.w;
+    $('rh').value = state.info.h;
+    $('lock').checked = true;
+    state.lockR = state.info.w / state.info.h;
+    $('pos').value = 50;
+    $('fmt').value = ['jpeg','png','webp'].includes(f.key) ? f.key : 'jpeg';
+    $('maxkb').value = '';
+    $('dpi').value = '';
+    $('resizeBody').classList.remove('locked');
+    updateResizeUI();
+    render();
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    showErr("This browser can't open that file. If it's an iPhone HEIC photo, convert it to JPEG first.");
+  };
+  img.src = url;
+}
+
+/* ---------- resize ---------- */
+function cropRect(sw, sh, tw, th, p){
+  const tr = tw/th, sr = sw/sh;
+  if(Math.abs(tr/sr - 1) < 0.005) return { x:0, y:0, w:sw, h:sh, cropped:false, axis:null };
+  if(tr < sr){
+    const cw = sh * tr;
+    return { x:(sw - cw) * p, y:0, w:cw, h:sh, cropped:true, axis:'x' };
+  }
+  const ch = sw / tr;
+  return { x:0, y:(sh - ch) * p, w:sw, h:ch, cropped:true, axis:'y' };
+}
+
+function targetDims(){
+  const w = Math.round(parseFloat($('rw').value)), h = Math.round(parseFloat($('rh').value));
+  return (w >= 1 && h >= 1) ? { w, h } : null;
+}
+
+function updateResizeUI(){
+  const info = state.info; if(!info) return;
+  const t = targetDims();
+  const box = $('cropBox'), posBox = $('posBox'), cn = $('cropNote');
+  const noteEl = $('rnote');
+  noteEl.className = 'note';
+
+  if(!t){ box.hidden = true; posBox.hidden = true; cn.hidden = true; return; }
+
+  const c = cropRect(info.w, info.h, t.w, t.h, $('pos').value / 100);
+  if(c.cropped){
+    box.hidden = false;
+    box.style.left = (c.x / info.w * 100) + '%';
+    box.style.top = (c.y / info.h * 100) + '%';
+    box.style.width = (c.w / info.w * 100) + '%';
+    box.style.height = (c.h / info.h * 100) + '%';
+    posBox.hidden = false;
+    $('posLabel').textContent = c.axis === 'x' ? 'Move the kept area left or right' : 'Move the kept area up or down';
+    cn.hidden = false;
+  }else{
+    box.hidden = true; posBox.hidden = true; cn.hidden = true;
+  }
+
+  const fmt = $('fmt').value;
+  $('q').disabled = fmt === 'png';
+  $('maxkb').disabled = fmt === 'png';
+  $('dpi').disabled = fmt !== 'jpeg';
+
+  let msg = c.cropped ? 'The photo is cropped to the new shape, never stretched.' : 'The photo keeps its shape.';
+  if(t.w > info.w || t.h > info.h){
+    msg += ' The new size is larger than your original, so the photo may look soft.';
+    noteEl.className = 'note warnnote';
+  }
+  if(fmt === 'png') msg += ' PNG files can\'t be shrunk by quality. Choose JPEG or WebP to reduce file size.';
+  noteEl.textContent = msg;
+}
+
+function computeTarget(r, info){
+  const ratio = r.ratio ? r.ratio[0]/r.ratio[1] : info.w/info.h;
+  let w = info.w, h = w/ratio;
+  if(r.minW && w < r.minW) w = r.minW;
+  if(r.maxW && w > r.maxW) w = r.maxW;
+  h = w/ratio;
+  if(r.minH && h < r.minH){ h = r.minH; w = h*ratio; }
+  if(r.maxH && h > r.maxH){ h = r.maxH; w = h*ratio; }
+  return { w:Math.round(w), h:Math.round(h) };
+}
+
+function matchRequirement(){
+  const info = state.info, r = getReq();
+  if(!info) return false;
+  if(!r){
+    const n = $('rnote'); n.className = 'note warnnote';
+    n.textContent = 'Choose a requirement in step 2 first, then this button fills in the settings for you.';
+    return false;
+  }
+  const t = r.target || computeTarget(r, info);
+  $('rw').value = t.w; $('rh').value = t.h;
+  $('lock').checked = true;
+  state.lockR = t.w / t.h;
+  $('pos').value = 50;
+
+  if(r.formats && !r.formats.includes($('fmt').value)){
+    const pick = r.formats.find(f => MIME[f]);
+    if(pick) $('fmt').value = pick;
+  }
+  $('maxkb').value = r.maxKB ? Math.floor(r.maxKB * 0.97) : '';
+  $('dpi').value = (r.minDPI && $('fmt').value === 'jpeg') ? r.minDPI : '';
+  updateResizeUI();
+  return true;
+}
+
+function resample(img, c, tw, th, opaque){
+  let cur = img, sx = c.x, sy = c.y, sw = c.w, sh = c.h;
+  while(sw/2 >= tw && sh/2 >= th){
+    const nw = Math.max(tw, Math.floor(sw/2)), nh = Math.max(th, Math.floor(sh/2));
+    const cv = document.createElement('canvas'); cv.width = nw; cv.height = nh;
+    const cx = cv.getContext('2d'); cx.imageSmoothingQuality = 'high';
+    cx.drawImage(cur, sx, sy, sw, sh, 0, 0, nw, nh);
+    cur = cv; sx = 0; sy = 0; sw = nw; sh = nh;
+  }
+  const out = document.createElement('canvas'); out.width = tw; out.height = th;
+  const ox = out.getContext('2d');
+  if(opaque){ ox.fillStyle = '#fff'; ox.fillRect(0, 0, tw, th); }
+  ox.imageSmoothingQuality = 'high';
+  ox.drawImage(cur, sx, sy, sw, sh, 0, 0, tw, th);
+  return out;
+}
+
+function toBlob(canvas, mime, q){
+  return new Promise(res => canvas.toBlob(res, mime, q));
+}
+
+async function patchJpegDpi(blob, dpi){
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  const d = Math.max(1, Math.min(65535, Math.round(dpi)));
+  if(buf[0] !== 0xFF || buf[1] !== 0xD8) return blob;
+  const isJfif = buf[2] === 0xFF && buf[3] === 0xE0 && buf[6] === 0x4A && buf[7] === 0x46 && buf[8] === 0x49 && buf[9] === 0x46;
+  if(isJfif){
+    buf[13] = 1; buf[14] = d >> 8; buf[15] = d & 255; buf[16] = d >> 8; buf[17] = d & 255;
+    return new Blob([buf], { type:'image/jpeg' });
+  }
+  const seg = new Uint8Array([0xFF,0xE0,0x00,0x10,0x4A,0x46,0x49,0x46,0x00,0x01,0x01,0x01,d>>8,d&255,d>>8,d&255,0,0]);
+  const out = new Uint8Array(buf.length + seg.length);
+  out.set(buf.subarray(0,2), 0);
+  out.set(seg, 2);
+  out.set(buf.subarray(2), 2 + seg.length);
+  return new Blob([out], { type:'image/jpeg' });
+}
+
+function clearOut(){
+  if(state.outUrl) URL.revokeObjectURL(state.outUrl);
+  state.outUrl = null; state.out = null;
+  $('outCard').hidden = true;
+}
+
+async function doResize(){
+  const info = state.info; if(!info) return;
+  const t = targetDims();
+  const note = $('rnote');
+  if(!t || t.w > 10000 || t.h > 10000){
+    note.className = 'note warnnote';
+    note.textContent = 'Enter a width and height between 1 and 10,000 px.';
+    return;
+  }
+  const btn = $('go'); btn.disabled = true; btn.textContent = 'Working…';
+  try{
+    await new Promise(r => setTimeout(r, 20));
+    const fmt = $('fmt').value;
+    const c = cropRect(info.w, info.h, t.w, t.h, $('pos').value / 100);
+    const canvas = resample(state.srcImg, c, t.w, t.h, fmt === 'jpeg');
+    const mime = MIME[fmt];
+    const dpi = (fmt === 'jpeg' && num('dpi')) ? num('dpi') : null;
+    const q0 = $('q').value / 100;
+    const maxKB = num('maxkb');
+    const maxB = (maxKB && fmt !== 'png') ? maxKB * 1024 : null;
+
+    const enc = async q => {
+      let b = await toBlob(canvas, mime, q);
+      if(b && fmt === 'jpeg' && dpi) b = await patchJpegDpi(b, dpi);
+      return b;
+    };
+
+    let blob, usedQ = q0, tooBig = false;
+    blob = await enc(q0);
+    if(!blob) throw new Error('encode');
+    if(maxB && blob.size > maxB){
+      const low = await enc(0.2);
+      if(low.size > maxB){ blob = low; usedQ = 0.2; tooBig = true; }
+      else{
+        blob = low; usedQ = 0.2;
+        let lo = 0.2, hi = q0;
+        for(let i = 0; i < 7; i++){
+          const mid = (lo + hi) / 2;
+          const bm = await enc(mid);
+          if(bm.size <= maxB){ blob = bm; usedQ = mid; lo = mid; } else hi = mid;
+        }
+      }
+    }
+
+    const savedKey = Object.keys(MIME).find(k => MIME[k] === blob.type) || fmt;
+    const base = (info.name || 'photo').replace(/\.[^.]+$/, '').replace(/[^\w\- ]+/g, '').trim() || 'photo';
+    if(state.outUrl) URL.revokeObjectURL(state.outUrl);
+    state.outUrl = URL.createObjectURL(blob);
+    state.out = {
+      blob, w:t.w, h:t.h, fmt:savedKey, fmtLabel:FORMATS[savedKey], dpi,
+      name:`${base}-${t.w}x${t.h}.${EXT[savedKey] || 'jpg'}`,
+      tooBig, switched: savedKey !== fmt, wanted: FORMATS[fmt], maxKB, q:usedQ
+    };
+    renderOut();
+    $('outCard').hidden = false;
+    $('outCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    updateResizeUI();
+  }catch(e){
+    note.className = 'note warnnote';
+    note.textContent = "Couldn't resize this photo. Try a smaller size or a different format.";
+  }finally{
+    btn.disabled = false; btn.textContent = 'Resize photo';
+  }
+}
+
+function renderOut(){
+  const o = state.out; if(!o) return;
+  $('outImg').src = state.outUrl;
+  const dl = $('dl'); dl.href = state.outUrl; dl.download = o.name;
+  let meta = `${px(o.w)} × ${px(o.h)} px, ${o.fmtLabel}, ${fmtSize(o.blob.size)}`;
+  if(o.switched) meta += `. Your browser can't save ${o.wanted}, so this is ${o.fmtLabel}.`;
+  else if(o.tooBig) meta += `. It is still over ${o.maxKB} KB at the lowest quality. Try a smaller width and height.`;
+  $('outMeta').textContent = meta;
+
+  const r = getReq();
+  const info = { w:o.w, h:o.h, size:o.blob.size, fmt:o.fmt, fmtLabel:o.fmtLabel, dpi:o.dpi };
+  const res = check(info, r);
+  const b = bannerFor(res, !!r, false);
+  $('outBanner').className = 'banner ' + b.cls;
+  $('outBanner').innerHTML = b.html;
+  $('outRows').innerHTML = res.rows.map(rowHTML).join('');
+}
+
+/* ---------- events ---------- */
+['file','cam'].forEach(id => $(id).addEventListener('change', e => { loadFile(e.target.files[0]); e.target.value = ''; }));
+
+const drop = $('drop');
+['dragenter','dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+document.addEventListener('drop', e => {
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) loadFile(f);
+});
+document.addEventListener('paste', e => {
+  const files = e.clipboardData && e.clipboardData.files;
+  if(files && files.length){
+    const f = [...files].find(x => x.type.startsWith('image/'));
+    if(f) loadFile(f);
+  }
+});
+
+$('preset').addEventListener('change', () => { render(); });
+$('customBox').addEventListener('input', render);
+$('customBox').addEventListener('change', render);
+
+$('banner').addEventListener('click', async e => {
+  if(e.target.closest('[data-fix]')){
+    if(matchRequirement()) await doResize();
+  }
+});
+
+$('rw').addEventListener('input', () => {
+  if($('lock').checked){ const w = parseFloat($('rw').value); if(w > 0) $('rh').value = Math.max(1, Math.round(w / state.lockR)); }
+  updateResizeUI();
+});
+$('rh').addEventListener('input', () => {
+  if($('lock').checked){ const h = parseFloat($('rh').value); if(h > 0) $('rw').value = Math.max(1, Math.round(h * state.lockR)); }
+  updateResizeUI();
+});
+$('lock').addEventListener('change', () => {
+  if($('lock').checked){ const t = targetDims(); if(t) state.lockR = t.w / t.h; }
+});
+$('pos').addEventListener('input', updateResizeUI);
+$('fmt').addEventListener('change', updateResizeUI);
+$('q').addEventListener('input', () => { $('qv').textContent = $('q').value; });
+$('match').addEventListener('click', matchRequirement);
+$('go').addEventListener('click', doResize);
+
+render();
+})();
+</script>
+</body>
+</html>
